@@ -1,23 +1,21 @@
-version: '3.8'
-name: task_manager
+version: '2.6'
+name: cryptobot
 services:
   db:
-
     image: postgres
     container_name: database
     restart: always
     environment:
-      POSTGRES_DB: tasker
+      POSTGRES_DB: cryptobot
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
     ports:
       - "5433:5432"
 
 
-  backend:
-    image: tiafanasev/task_manager_back:backend
+  bot:
+    image: tiafanasev/cryptobot:bot
     depends_on:
       - db
-    command: uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8080
     ports:
       - "8080:8080"
