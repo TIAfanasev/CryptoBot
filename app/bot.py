@@ -20,7 +20,6 @@ def control_rates():
     try:
         response = session.get(url, params=parameters)
         data = response.json()
-        print(data)
         for x in supported_coins:
             print(data['data'][str(x)]['quote']['USD']['price'])
             max_thresholds = check_max(x, data['data'][str(x)]['quote']['USD']['price'])
@@ -31,8 +30,6 @@ def control_rates():
                 bot.send_message(user, f"Верхний порог {data['data'][str(x)]['symbol']} пройден. Текущий курс: {data['data'][str(x)]['quote']['USD']['price']} USD")
             for user in min_thresholds:
                 bot.send_message(user, f"Нижний порог {data['data'][str(x)]['symbol']} пройден. Текущий курс: {data['data'][str(x)]['quote']['USD']['price']} USD")
-            print(max_thresholds)
-            print(min_thresholds)
     except Exception as e:
         print(e)
 
@@ -52,6 +49,11 @@ def send_welcome(message):
     bot.send_message(message.from_user.id, f"Привет, {message.from_user.first_name}! Я умею отслеживать курс BTC, "
                                            "LTC, DOGE, TON, ETH")
     send_crypto(message.from_user.id)
+
+
+@bot.message_handler(func=lambda message: user_states[message.chat.id].get('state') != 'waiting_value')
+def say_nothing(message):
+    bot.send_message(message.from_user.id, 'Не прокатило, нажимайте кнопки')
 
 
 def send_crypto(u_id):
@@ -75,6 +77,7 @@ def get_crypto(call):
 
 @bot.callback_query_handler(func=lambda call: call.data in ['add', 'del'])
 def get_action(call):
+
     markup = telebot.types.InlineKeyboardMarkup()
     min_threshold = telebot.types.InlineKeyboardButton(text='Нижний порог', callback_data='low')
     max_threshold = telebot.types.InlineKeyboardButton(text='Верхний порог', callback_data='high')
@@ -90,7 +93,7 @@ def get_action(call):
 @bot.callback_query_handler(func=lambda call: call.data in ['low', 'high'])
 def get_threshold(call):
     user_states[call.message.chat.id]['threshold_type'] = call.data
-    print(user_states)
+    # print(user_states)
     if user_states[call.message.chat.id]['state'] == 'waiting_delete':
         if user_states[call.message.chat.id]['crypto']:
             coin_id = cryptos[user_states[call.message.chat.id]['crypto']]
@@ -98,6 +101,7 @@ def get_threshold(call):
                 reset_threshold(call.message.chat.id, coin_id, False)
             else:
                 reset_threshold(call.message.chat.id, coin_id, True)
+            bot.send_message(call.message.chat.id, "Пороговое значение удалено")
         send_crypto(call.message.chat.id)
     else:
         bot.send_message(call.message.chat.id, "Введите пороговое значение:")
